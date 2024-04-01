@@ -1,0 +1,13 @@
+.scrollBarHider::-webkit-scrollbar {
+    width: 8px;
+}
+html{
+    background: #111827;
+}
+/* Handle */
+.scrollBarHider::-webkit-scrollbar-thumb {
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    background: #fd4c55; 
+}
+
