@@ -18,10 +18,11 @@ This is a real-time chat application built using ReactJS for frontend and Fireba
 ## Live Demo
 Check out the live version of the app on Vercel: [ChatApp Live](https://chat-app-logan.vercel.app/login)
 
+![Screenshot for sm screen](https://github.com/cdn-lgn/ChatAppFirebase-/assets/149867954/be0de52f-9d69-44cc-8a1d-1c80d1c4dfe7)
+![screenshot for md or big screen](https://github.com/cdn-lgn/ChatAppFirebase-/assets/149867954/7b14807b-c09f-4019-9a2a-2cb71a75cf5d)
 
 
-![App Screenshot](screenshot1.png)
-![App Screenshot](screenshot2.png)
+
 
 
 ## Installation
