@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
 /*import { signOut } from 'firebase/auth'; // Importing signOut function from firebase/auth*/
 import { useNavigate } from 'react-router-dom';
-import { collection, onSnapshot, orderBy, query, where, getDocs } from 'firebase/firestore'; // Importing Firestore functions
+import { collection, doc, getDoc, onSnapshot, orderBy, query, where, getDocs } from 'firebase/firestore'; // Importing Firestore functions
 import { useThemeContext } from '../../context/themeContext';
 import { useFirebaseContext } from '../../context/firebaseContext';
+import { useUserSelectedContext } from '../../context/userSelectedContext';
 import { IoMdSettings } from 'react-icons/io';
 
 const Sidebar = () => {
+    console.log("sidebar render")
     // State variables
     const { sidePanel, setSidePanel, primaryColor1, primaryColor2, primaryColor3, primaryColor4, primaryColor5, textColor1, textColor2 } = useThemeContext() //color Context
     const [search, setSearch] = useState(""); // State for search input value
     const [userSearched, setUserSearched] = useState([]); // State for searched users
-    const { currentUser, firebaseFirestore, signOutFunction, userSelected, setUserSelected } = useFirebaseContext(); // Destructuring values from Firebase context
+    const { currentUser, firebaseFirestore, signOutFunction,/* userSelected, setUserSelected */} = useFirebaseContext(); // Destructuring values from Firebase context
+    const { userSelected,setUserSelected} = useUserSelectedContext()
     const [friendList, setFriendList] = useState(null); // State for friend list
     const navigate = useNavigate(); // Navigation function
 
@@ -22,16 +25,31 @@ const Sidebar = () => {
         }
     }, [currentUser]);
 
+
+
+
+
+
+
+
+
+
+
+
     // Fetch friends from Firestore
     const fetchFriends = async () => {
         try {
             const friendCollectionRef = collection(firebaseFirestore, `userFriends/${currentUser.uid}/friendData`); // Reference to user's friend collection
             const orderedFriends = query(friendCollectionRef, orderBy("timeStamp", 'desc')); // Query for ordering friends by timestamp
-            const unsubscribe = onSnapshot(orderedFriends, (snapshot) => {
-                const updatedFriendList = snapshot.docs.map(doc => {
-                    const { lastMessage, uid, name, profileImage, gender, about, status } = doc.data();
-                    return { lastMessage, uid, name, profileImage, gender, about, status };
-                });
+            const unsubscribe = onSnapshot(orderedFriends, async (friends) => {
+                const updatedFriendList = [];
+                for (const friend of friends.docs) {
+                    const { lastMessage, status, uid } = friend.data();
+                    const userFriendRef = doc(firebaseFirestore, 'users', friend.id);
+                    const userFriendSnap = await getDoc(userFriendRef);
+                    const { name, gender, about, profileImage } = userFriendSnap.data();
+                    updatedFriendList.push({ lastMessage, status, name, gender, about, uid, profileImage });
+                }
                 setFriendList(updatedFriendList); // Set friend list state
             });
             return () => unsubscribe(); // Unsubscribe from snapshot listener on component unmount
@@ -39,6 +57,7 @@ const Sidebar = () => {
             console.error("Error fetching friends:", error);
         }
     };
+
 
     // Search for users in Firestore
     const searchUser = async (e) => {
@@ -71,7 +90,7 @@ const Sidebar = () => {
 
     // JSX rendering
     return (
-        <div className={`h-full md:w-1/3 lg:w-[25%] flex flex-col ${!userSelected || !sidePanel ? 'w-screen' : 'w-0'} transition-all duration-100`} style={{color: textColor1}}>
+        <div className={`h-full md:w-1/3 lg:w-[25%] flex flex-col ${!sidePanel ? 'w-screen' : 'w-0'} transition-all duration-100`} style={{color: textColor1}}>
             {/* User Info and Logout */}
             <div className="w-full">
                 <div className="w-full h-12 flex items-center justify-between px-2 py-2" style={{background:primaryColor1 , color:textColor1}}>
@@ -118,7 +137,7 @@ const Sidebar = () => {
                         <div className="w-full h-12 flex items-center justify-between px-2 py-2">
                             <div className="h-full flex items-center gap-2 cursor-pointer">
                                 <img className="h-10 w-10 object-cover rounded rounded-full" src={userSelected.profileImage} alt="" onClick={()=>setSidePanel('profile')}/>
-                                <h2 className="text-xl">{userSelected.name}</h2>
+                                <h2 className="text-xl" onClick={()=>setSidePanel('CurrentChat')}>{userSelected.name}</h2>
                             </div>
                         </div>
                     )}
@@ -137,7 +156,7 @@ const Sidebar = () => {
                             setUserSelected(friend)
                             return setSidePanel('profile');
                         }}/>
-                        <div className="">
+                        <div className="" onClick={()=>setSidePanel('CurrentChat')}>
                             <h2 className="text-xl h-[22px]">{friend.name}</h2>
                             <p className="text-[xl-2px]">{friend.lastMessage}</p>
                         </div>

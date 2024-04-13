@@ -96,7 +96,7 @@ const Signup = () => {
             className="hidden block border border-grey-light w-full p-3 rounded mb-4"
             onInput={handleFileChange}
           />
-          <label htmlFor="avatar" className="flex items-center justify-center rounded-full w-28 mb-8">
+          <label htmlFor="avatar" className="flex hover:cursor-pointer items-center justify-center rounded-full w-28 mb-8">
             <img className="h-28 w-28 rounded-full rounded object-cover content-center" src={formData.photo ? `${URL.createObjectURL(formData.photo)}` : 'https://cdn.pixabay.com/photo/2017/07/18/23/23/user-2517433_640.png'} onChange={handleFileChange} alt=""/>
           </label>
 

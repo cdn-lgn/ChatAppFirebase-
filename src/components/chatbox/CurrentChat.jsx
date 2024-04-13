@@ -5,15 +5,19 @@ import { useThemeContext } from '../../context/themeContext';
 import { useFirebaseContext } from '../../context/firebaseContext';
 import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { FaChevronLeft } from 'react-icons/fa';
+import { useUserSelectedContext } from '../../context/userSelectedContext';
+
 
 const CurrentChat = () => {
     console.log('CurrentChat render...')
 
     // Context and state variables
-    const { setSidePanel, primaryColor1, primaryColor2, primaryColor3, primaryColor4, primaryColor5, textColor1, textColor2 } = useThemeContext() //color Context
-    const { userSelected, setUserSelected, currentUser, firebaseFirestore } = useFirebaseContext();
+    const { sidePanel, setSidePanel, primaryColor1, primaryColor2, primaryColor3, primaryColor4, primaryColor5, textColor1, textColor2 } = useThemeContext() //color Context
+    const { /*userSelected, setUserSelected,*/ currentUser, firebaseFirestore } = useFirebaseContext();
     const [input, setInput] = useState(""); // State for input value
     const [currentChat, setCurrentChat] = useState(null); // State for current chat messages
+    const { userSelected,setUserSelected } = useUserSelectedContext()
+
 
     // Refs
     const chatBottomRef = useRef(null); // Ref for scrolling to the bottom of chat
@@ -36,6 +40,7 @@ const CurrentChat = () => {
     // Effect to fetch chat messages when a user is selected
     useEffect(() => {
         if (userSelected) {
+            console.log('fetching chat')
             fetchChat();
         }
     }, [userSelected]);
@@ -117,11 +122,11 @@ const CurrentChat = () => {
     };
 
     // Render component only if a user is selected
-    if (userSelected) {
+    if (sidePanel=="CurrentChat") {
         if(userSelected.status==`blockedBy${currentUser.displayName}`){
             return(
                 <div 
-                    className={`w-3/5 md:w-2/3 lg:w-[75%] flex flex-col w-0 h-full ${!userSelected ? 'w-0 hidden' : 'block w-screen'} transition-all duration-100`} 
+                    className={`w-3/5 md:w-2/3 lg:w-[75%] flex flex-col w-0 h-full ${!sidePanel ? 'w-0 hidden' : 'block w-screen'} transition-all duration-100`} 
                     style={{ background : primaryColor3 , color : textColor1 }}>
                     {/* Top Bar */}
                     <div className="w-full z-10" style={{background:primaryColor3}}>
@@ -135,6 +140,26 @@ const CurrentChat = () => {
                         <div className="h-[.3px] w-full"></div>
                     </div>
                     <div className="h-full w-full flex items-center justify-center">You are blocked this user</div>
+                </div>
+            )
+        }
+        else if(userSelected.status==`AccDeleted`){
+            return(
+                <div 
+                    className={`w-3/5 md:w-2/3 lg:w-[75%] flex flex-col w-0 h-full ${!userSelected ? 'w-0 hidden' : 'block w-screen'} transition-all duration-100`} 
+                    style={{ background : primaryColor3 , color : textColor1 }}>
+                        {/* Top Bar */}
+                    <div className="w-full z-10" style={{background:primaryColor3}}>
+                        <div className="w-full h-12 flex items-center justify-between px-2 py-2">
+                            <div className="h-full flex items-center gap-2 cursor-pointer">
+                                <FaChevronLeft className="md:hidden p-1 text-3xl cursor-pointer rounded-full hover:rounded-full hover:bg-[#3f4956] duration-500 transition" onClick={() => setUserSelected(null)} />
+                                <img className="h-9 w-9 object-cover rounded rounded-full" src={userSelected.profileImage} alt="" onClick={()=>setSidePanel('profile')}/>
+                                <h2 className="text-xl" onClick={()=>setSidePanel('profile')}>{userSelected.name}</h2>
+                            </div>
+                        </div>
+                        <div className="h-[.3px] w-full"></div>
+                    </div>
+                    <div className="h-full w-full flex items-center justify-center">This user deleted his/her account</div>
                 </div>
             )
         }

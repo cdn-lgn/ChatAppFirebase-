@@ -6,15 +6,29 @@ import { IoVideocamOutline } from 'react-icons/io5';
 import { RiUserVoiceLine } from 'react-icons/ri';
 import { FaRegMessage } from 'react-icons/fa6';
 import { MdBlock, MdClearAll } from 'react-icons/md';
-import { TbMessageReport } from 'react-icons/tb';
 import { CgUnblock } from 'react-icons/cg';
-import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
+import { LiaUserFriendsSolid } from 'react-icons/lia';
+import { useUserSelectedContext } from '../../context/userSelectedContext';
+
+
 
 const Profile = () => {
   // Using custom hooks to access context values
-  const { userSelected, setUserSelected, currentUser, firebaseFirestore } = useFirebaseContext();
+  const { /*userSelected, setUserSelected,*/ currentUser, firebaseFirestore } = useFirebaseContext();
   const { setSidePanel, primaryColor1, primaryColor3, textColor1, textColor2 } = useThemeContext();
   const [imageFullView, setImageFullView] = useState(false);
+  const { userSelected,setUserSelected } = useUserSelectedContext()
+
+
+
+
+
+
+
+
+
+
 
   // Function to clear chat messages
   const clearChat = async () => {
@@ -27,6 +41,13 @@ const Profile = () => {
       console.log(e);
     }
   };
+
+  /*delete friend function*/
+  const deleteFriend =async()=>{
+    const friendRef = doc(firebaseFirestore,`userFriends/${currentUser.uid}/friendData`, `${userSelected.uid}`)
+    deleteDoc(friendRef)
+    setSidePanel("")
+  }
 
   // Function to block a user
   const blockUser = () => {
@@ -53,7 +74,7 @@ const Profile = () => {
   };
 
   return (
-    <div className={`relative w-3/5 md:w-2/3 lg:w-[75%] flex flex-col w-0 h-full ${!userSelected ? 'w-0 hidden' : 'block w-screen'} transition-all duration-100`} style={{ background: primaryColor1 }}>
+    <div className={`relative w-3/5 md:w-2/3 lg:w-[75%] flex flex-col w-0 h-full ${ !userSelected ? 'w-0 hidden' : 'block w-screen'} transition-all duration-100`} style={{ background: primaryColor1 }}>
       {/* Header */}
       <div className="w-screen h-14 p-2 flex items-center" style={{ background: primaryColor3 }}>
         <FaChevronLeft className="p-1 text-3xl cursor-pointer hover:opacity-60 transition-all duration-300" style={{ color: textColor1 }} onClick={() => setSidePanel('CurrentChat')} />
@@ -91,15 +112,15 @@ const Profile = () => {
             <dl>Message</dl>
           </div>
           {/* Voice Call */}
-          <div className="flex items-center gap-4 px-2 py-2 cursor-pointer w-fit">
+          {/*<div className="flex items-center gap-4 px-2 py-2 cursor-pointer w-fit">
             <dt className="text-gray-600 text-xl"><RiUserVoiceLine /></dt>
             <dl>Voice Call</dl>
           </div>
-          {/* Video Call */}
-          <div className="flex items-center gap-4 px-2 py-2 cursor-pointer w-fit">
+*/}          {/* Video Call */}
+          {/*<div className="flex items-center gap-4 px-2 py-2 cursor-pointer w-fit">
             <dt className="text-blue-600 text-xl"><IoVideocamOutline /></dt>
             <dl>Video Call</dl>
-          </div>
+          </div>*/}
         </dl>
       </div>
 
@@ -107,10 +128,19 @@ const Profile = () => {
       <div>
         <dl className="my-4 mx-2 md:mx-8 grid md:grid-cols-3 grid-cols-none" style={{ color: textColor1 }}>
           {/* Clear Chat */}
-          <div className="flex items-center gap-4 px-2 py-2 cursor-pointer w-fit" onClick={() => clearChat()}>
-            <dt className="text-red-600 text-xl"><MdClearAll /></dt>
-            <dl>Clear Chat</dl>
-          </div>
+          {userSelected.lastMessage && (
+            <div className="flex items-center gap-4 px-2 py-2 cursor-pointer w-fit" onClick={() => clearChat()}>
+              <dt className="text-red-600 text-xl"><MdClearAll /></dt>
+              <dl>Clear Chat</dl>
+            </div>
+          )}
+          {/* Delete Friend */}
+          {userSelected.lastMessage && (
+            <div className="flex items-center gap-4 px-2 py-2 cursor-pointer w-fit" onClick={()=>deleteFriend()}>
+              <dt className="text-red-600 text-xl"><LiaUserFriendsSolid /></dt>
+              <dl>Delete Friend</dl>
+            </div>
+          )}
           {/* Block/Unblock */}
           {userSelected.status === `blockedBy${currentUser.displayName}` ? (
             <div className="flex items-center gap-4 px-2 py-2 cursor-pointer w-fit" onClick={() => unblockUser()}>
@@ -123,11 +153,6 @@ const Profile = () => {
               <dl>Block</dl>
             </div>
           )}
-          {/* Report */}
-          <div className="flex items-center gap-4 px-2 py-2 cursor-pointer w-fit">
-            <dt className="text-red-600 text-xl"><TbMessageReport /></dt>
-            <dl>Report</dl>
-          </div>
         </dl>
       </div>
 

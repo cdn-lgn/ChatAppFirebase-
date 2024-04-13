@@ -2,12 +2,13 @@ import React, { useState } from 'react'
 import { useThemeContext } from '../../context/themeContext';
 import { useFirebaseContext } from '../../context/firebaseContext';
 import { EmailAuthProvider, deleteUser, reauthenticateWithCredential } from 'firebase/auth';
-import { collection, deleteDoc, doc, getDoc, getDocs } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
+import { ref, deleteObject } from "firebase/storage";
 
 const DeleteUser = () => {
 
 
-  const {currentUser, setLoading, setCurrentUser, firebaseFirestore, firebaseStorage, firebaseAuth, signOutFunction, deleteCurrentUser} = useFirebaseContext()
+  const {currentUser, setCurrentUser, setLoading, firebaseFirestore, firebaseStorage, firebaseAuth, signOutFunction, deleteCurrentUser} = useFirebaseContext()
   const {sidePanel, setSidePanel, primaryColor1, primaryColor2, primaryColor3, primaryColor4, primaryColor5, textColor1, textColor2, theme, setTheme} = useThemeContext()
 
   const [password, setPassword] = useState('');
@@ -17,61 +18,74 @@ const DeleteUser = () => {
 
 
   const handleSubmit = async(e)=>{
-  	e.preventDefault()
-  	try {
+    e.preventDefault()
+    try {
       setDeleteDisabled(true); // Disable the button on form submission
-      await deleteUserReauthenticate();
       await deleteChat()
+      await deleteUserReauthenticate();
       // Optionally, you can handle success or navigate to another page here
     } catch (error) {
       console.error("Error deleting user:", error);
       // Optionally, display an error message to the user
     } finally {
       setDeleteDisabled(false); // Enable the button after deletion process completes
+      setCurrentUser(null);
+      setSidePanel("")
     }
   }
   
 
   const deleteChat = async()=>{
-  	try{
-  		// Fetch chat collection specific to the current user and delete conversation of user with his friends from his side
-	    const querySnapshot = await getDocs(collection(firebaseFirestore, `userFriends/${currentUser.uid}/friendData`));
-	    console.log(querySnapshot)
-			querySnapshot.forEach(async(friend) => {
-			  const singleFriendChat = await getDocs(collection(firebaseFirestore,`chatCol/${currentUser.uid}/friends/${friend.id}/chats`))
-			  singleFriendChat.forEach((chat)=>{
-			  	deleteDoc(chat.ref)
-			  })
-			});
-	    console.log('Chat collection processed successfully');
-  	}catch(e){
-  		console.log(e)
-  	}
+    try{
+      // Fetch chat collection specific to the current user and delete conversation of user with his friends from his side
+      const querySnapshot = await getDocs(collection(firebaseFirestore, `userFriends/${currentUser.uid}/friendData`));
+      console.log(querySnapshot)
+      querySnapshot.forEach(async(friend) => {
+
+        /*update user status to accdeleted*/
+        updateDoc(doc(firebaseFirestore, `userFriends/${friend.id}/friendData`, `${currentUser.uid}`), { status: `AccDeleted` });
+
+
+        /*delete friends*/
+        const singleFriendChat = await getDocs(collection(firebaseFirestore,`chatCol/${currentUser.uid}/friends/${friend.id}/chats`))
+        singleFriendChat.forEach((chat)=>{
+          deleteDoc(chat.ref)
+        })
+        /*for deleting user's friendsList*/
+        deleteDoc(friend.ref)
+      });
+      console.log('Chat collection processed successfully');
+    }catch(e){
+      console.log(e)
+    }
   }
 
-	const deleteUserReauthenticate = async () => {
-	  setReauthenticating(true);
-	  try {
-	    const user = firebaseAuth.currentUser;
-	    const credential = EmailAuthProvider.credential(user.email, password);
-	    await reauthenticateWithCredential(user, credential);
+  const deleteUserReauthenticate = async () => {
+    setReauthenticating(true);
+    try {
+      
+      const user = firebaseAuth.currentUser;
+      const credential = EmailAuthProvider.credential(user.email, password);
+      await reauthenticateWithCredential(user, credential);
       /*await deleteUser(user)*/
 
-      /*for deleting your friendsList*/
-      const friendCollection =await getDocs(collection(firebaseFirestore,`userFriends/${currentUser.uid}/friendData`))
-      friendCollection.forEach((friend)=>{
-      	deleteDoc(friend.ref)
-      })
-
-      /*await deleteDoc(doc(firebaseFirestore,`users/${currentUser.uid}`))*/
+      await deleteDoc(doc(firebaseFirestore,`users/${currentUser.uid}`))
+      // Create a reference to the profile to delete
+      const desertRef = ref(firebaseStorage, `users/${currentUser.uid}/profilePic.jpg`);
+      // Delete the dp pic
+      deleteObject(desertRef).then(() => {
+        // File deleted successfully
+      }).catch((error) => {
+        // Uh-oh, an error occurred!
+      });
       // Optionally, handle success or navigate to another page here
-	  } catch (error) {
-	    console.error("Error re-authenticating user:", error);
-	    // Optionally, display an error message to the user
-	  } finally {
-	    setReauthenticating(false);
-	  }
-	};
+    } catch (error) {
+      console.error("Error re-authenticating user:", error);
+      // Optionally, display an error message to the user
+    } finally {
+      setReauthenticating(false);
+    }
+  };
 
 return (
     <div className="absolute md:relative w-3/5 md:w-2/3 lg:w-[75%] flex flex-col h-full items-center justify-center transition-all duration-100">
